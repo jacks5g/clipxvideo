@@ -16,7 +16,7 @@
     "@aws-sdk/client-s3": "^3.1146.0",
     "@aws-sdk/s3-request-presigner": "^3.1146.0",
     "@base-ui/react": "^1.8.0",
-    "@clerk/nextjs": "^8.0.0",
+    "@clerk/nextjs": "^7.9.11",
     "@neondatabase/serverless": "^1.0.1",
     "@remotion/player": "^4.0.533",
     "@shadcn/react": "^0.3.1",
