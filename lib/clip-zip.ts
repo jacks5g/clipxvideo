@@ -23,7 +23,7 @@ export async function filesToZip(files: Array<{ name: string; blob: Blob }>): Pr
   const locals: BlobPart[] = [];
   const centrals: BlobPart[] = [];
   let run = 0;
-  const bufs: Uint8Array[] = [];
+  const bufs: Uint8Array<ArrayBuffer>[] = [];
   for (const f of files) bufs.push(new Uint8Array(await f.blob.arrayBuffer()));
   for (let i = 0; i < files.length; i++) {
     const nm = te.encode(files[i].name);

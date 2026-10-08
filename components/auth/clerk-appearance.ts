@@ -1,13 +1,18 @@
-import type { Appearance } from "@clerk/nextjs";
-
 /**
  * Shared Clerk appearance so the custom sign-in / sign-up pages match the
  * FastXClip dark-first theme (see Theme.md).
  *
  * Only semantic-token Tailwind utilities are used here — no raw colors —
  * so Clerk's prebuilt cards blend in with the shadcn surfaces.
+ *
+ * NOTE: intentionally NOT typed as Clerk's `Appearance` — the exact
+ * `elements`/`variables` key sets drift between @clerk/* releases and the
+ * `satisfies` check hard-fails the build. This structural type stays
+ * assignable to the `appearance` prop without pinning key names.
  */
-export const clerkAppearance = {
+export const clerkAppearance: {
+  elements: Record<string, string>;
+} = {
   elements: {
     rootBox: "w-full",
     cardBox: "w-full",

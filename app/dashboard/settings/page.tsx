@@ -24,7 +24,6 @@ export default function SettingsPage() {
             elements: clerkAppearance.elements,
             variables: {
               colorBackground: "var(--card)",
-              colorCard: "var(--card)",
               colorText: "var(--foreground)",
               colorTextSecondary: "var(--muted-foreground)",
               colorInputBackground: "var(--background)",

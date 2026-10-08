@@ -14,6 +14,7 @@ import {
   selectViralMoments,
   sliceCaptionsForRange,
   type ViralMoment,
+  type ViralMomentWithCaptions,
 } from "@/lib/gemini-shorts";
 
 type AnalysisRequestedData = {
@@ -219,7 +220,7 @@ export const analyzeVideo = inngest.createFunction(
         // Never fail transcription because Gemini hiccuped — save the
         // transcript with zero shorts and surface the reason in the log.
         console.warn(`[analyze-video] Gemini shorts selection failed: ${(err as Error).message}`);
-        return { moments: [] as ViralMoment[], shortsCount: 0, error: (err as Error).message };
+        return { moments: [] as ViralMomentWithCaptions[], shortsCount: 0, error: (err as Error).message };
       }
       // Slice per-short captions from word timings; when words are
       // missing, fall back to splitting the full transcript text.

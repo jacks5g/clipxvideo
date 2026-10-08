@@ -150,15 +150,23 @@ export default function ProjectPage() {
   const shortsReady = shorts.length > 0 && status !== "failed";
 
   useEffect(() => {
-    load();
     // Poll fast while clips generate; once shorts are ready the Remotion
     // showcase replaces the progress panel, so back off to avoid hammering
     // the API (and re-rendering the player).
+    // NOTE: the first fetch is deferred with a timer — calling the
+    // setState-ing `load()` synchronously here trips
+    // react-hooks/set-state-in-effect (cascading renders) and fails the build.
+    const immediate = setTimeout(() => {
+      void load();
+    }, 0);
     const t = setInterval(() => {
       if (document.hidden) return;
       void load();
     }, shortsReady ? 15000 : 2000);
-    return () => clearInterval(t);
+    return () => {
+      clearTimeout(immediate);
+      clearInterval(t);
+    };
   }, [load, shortsReady]);
   const activeShort =
     shorts.find((s) => s.id === activeShortId) ?? shorts[0] ?? null;

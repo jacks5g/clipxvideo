@@ -6,7 +6,7 @@ export const inngest = new Inngest({ id: "fastxclip" });
 
 // Wrap serve() to log the real error — Next dev swallows it as empty 500.
 export function serveDebug(opts: Parameters<typeof serveOrig>[0]) {
-  const handlers = serveOrig(opts) as Record<string, (req: Request) => Promise<Response>>;
+  const handlers = serveOrig(opts) as unknown as Record<string, (req: Request) => Promise<Response>>;
   const wrapped: Record<string, (req: Request) => Promise<Response>> = {};
   for (const m of ["GET", "POST", "PUT"] as const) {
     wrapped[m] = async (req: Request) => {

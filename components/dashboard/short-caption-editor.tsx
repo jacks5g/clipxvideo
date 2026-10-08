@@ -245,9 +245,10 @@ export function ShortCaptionEditor({ short, open, onOpenChange, playbackUrl, thu
                     value={[draft.fontSize]}
                     min={28}
                     max={110}
-                    onValueChange={(v) =>
-                      patch({ fontSize: clamp(v[0] ?? 68, 28, 110), presetId: "custom" })
-                    }
+                    onValueChange={(v) => {
+                      const first = Array.isArray(v) ? v[0] : v;
+                      patch({ fontSize: clamp(first ?? 68, 28, 110), presetId: "custom" });
+                    }}
                   />
                 </Row>
               </div>
@@ -267,7 +268,7 @@ export function ShortCaptionEditor({ short, open, onOpenChange, playbackUrl, thu
                 <Row label={`Background · ${draft.backgroundOpacity}%`}>
                   <div className="flex items-center gap-2.5">
                     <Input type="color" value={draft.backgroundColor} onChange={(e) => patch({ backgroundColor: e.target.value, presetId: "custom" })} className="h-9 w-12 shrink-0 cursor-pointer p-1" aria-label="Background color" />
-                    <Slider value={[draft.backgroundOpacity]} min={0} max={100} onValueChange={(v) => patch({ backgroundOpacity: v[0] ?? 75, presetId: "custom" })} />
+                    <Slider value={[draft.backgroundOpacity]} min={0} max={100} onValueChange={(v) => { const first = Array.isArray(v) ? v[0] : v; patch({ backgroundOpacity: first ?? 75, presetId: "custom" }); }} />
                   </div>
                 </Row>
                 <div className="grid grid-cols-2 gap-3">
