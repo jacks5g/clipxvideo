@@ -40,4 +40,4 @@ export const clerkAppearance: {
     alertText: "text-foreground",
     formResendCodeLink: "text-brand hover:text-brand-2",
   },
-} satisfies Appearance;
+};

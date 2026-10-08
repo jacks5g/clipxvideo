@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     "Turn long podcasts, webinars and YouTube videos into viral short clips in minutes. AI finds the best moments, reframes to 9:16, adds animated captions and scores every clip.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
