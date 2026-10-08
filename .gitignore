@@ -51,8 +51,17 @@ _tmp
 .local
 _tmp-*
 tmp-push-*
-tmp-r.txt
-tmp-s.txt
+tmp-r*
+tmp-s*
+tmp-c*
+tmp-p*
+tmp-ls*
+tmp-gh*
+tmp-cfg*
+tmp-done*
+tmp-cred*
+_push*
+log_check.txt
 
 # env files (can opt-in for committing if needed)
 .env*
