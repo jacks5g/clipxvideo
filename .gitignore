@@ -49,6 +49,10 @@ _tsc*
 tsc-out*
 _tmp
 .local
+_tmp-*
+tmp-push-*
+tmp-r.txt
+tmp-s.txt
 
 # env files (can opt-in for committing if needed)
 .env*
