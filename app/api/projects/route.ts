@@ -126,7 +126,22 @@ export async function POST(req: NextRequest) {
     // with `violates foreign key constraint "projects_user_id_fkey"`.
     // Minimal insert + DoNothing keeps this safe under concurrency; the layout
     // sync backfills email/name/avatar on the next visit.
-    await db.insert(users).values({ id: userId }).onConflictDoNothing();
+    //
+    // Fresh production DBs (Vercel) have NO tables at all — the very first
+    // upload then dies here with `[42P01] relation "users" does not exist`.
+    // Self-heal (idempotent CREATE TABLE IF NOT EXISTS) and retry once so
+    // the upload succeeds instead of surfacing "Upload failed [42P01]".
+    try {
+      await db.insert(users).values({ id: userId }).onConflictDoNothing();
+    } catch (userErr) {
+      if (!isMissingColumnError(userErr)) throw userErr;
+      console.warn(
+        "[projects] schema not ready (fresh/stale DB), self-healing then retrying user insert:",
+        (userErr as Error)?.message?.slice(0, 300),
+      );
+      await ensureProjectsSchema();
+      await db.insert(users).values({ id: userId }).onConflictDoNothing();
+    }
 
     // --- Hard daily quota (ALWAYS runs — Arcjet-independent) ---------------
     // 17 uploads per rolling 24h; resets next day automatically.

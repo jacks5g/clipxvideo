@@ -1,6 +1,10 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
+import {
+  ensureProjectsSchema,
+  isSchemaNotReadyError,
+} from "@/lib/ensure-schema";
 
 /**
  * Sync the signed-in Clerk user into Neon.
@@ -12,6 +16,11 @@ import { users } from "@/db/schema";
  *
  * Never throws — auth pages and the dashboard must render even if Neon is
  * unreachable.
+ *
+ * On a fresh production DB (Vercel) the `users` table may not exist yet
+ * (`[42P01] relation "users" does not exist`) — self-heal once
+ * (idempotent CREATE TABLEs) and retry so the first visit creates both the
+ * schema and the user row.
  */
 export async function syncCurrentUserToDb() {
   const user = await currentUser();
@@ -21,29 +30,42 @@ export async function syncCurrentUserToDb() {
     const db = getDb();
     const email = user.primaryEmailAddress?.emailAddress ?? null;
 
-    const rows = await db
-      .insert(users)
-      .values({
-        id: user.id,
-        email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        imageUrl: user.imageUrl,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
+    const upsert = () =>
+      db
+        .insert(users)
+        .values({
+          id: user.id,
           email,
           firstName: user.firstName,
           lastName: user.lastName,
           imageUrl: user.imageUrl,
           updatedAt: new Date(),
-        },
-      })
-      .returning();
+        })
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            imageUrl: user.imageUrl,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
 
-    return rows[0] ?? null;
+    try {
+      const rows = await upsert();
+      return rows[0] ?? null;
+    } catch (error) {
+      if (!isSchemaNotReadyError(error)) throw error;
+      console.warn(
+        "[sync-user] schema not ready (fresh/stale DB), self-healing:",
+        (error as Error).message?.slice(0, 300),
+      );
+      await ensureProjectsSchema();
+      const rows = await upsert();
+      return rows[0] ?? null;
+    }
   } catch (error) {
     // Missing DATABASE_URL in local dev, or a transient Neon outage:
     // log and let the page render anyway.

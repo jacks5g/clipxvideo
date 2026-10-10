@@ -65,7 +65,10 @@ CREATE TABLE IF NOT EXISTS "shorts" (
   "captions_srt" text,
   "captions_vtt" text,
   "cue_count" integer DEFAULT 0 NOT NULL,
+  "caption_style_json" text,
   "status" text DEFAULT 'ready' NOT NULL,
   "created_at" timestamp DEFAULT now() NOT NULL,
   "updated_at" timestamp DEFAULT now() NOT NULL
 );
+-- Existing DBs created before caption styling: add the column idempotently.
+ALTER TABLE "shorts" ADD COLUMN IF NOT EXISTS "caption_style_json" text;
