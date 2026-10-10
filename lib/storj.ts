@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Readable } from "node:stream";
 
@@ -30,6 +31,8 @@ export function getS3() {
     endpoint,
     credentials: { accessKeyId, secretAccessKey },
     forcePathStyle: true,
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
   });
   return cached;
 }
@@ -105,24 +108,43 @@ export async function putVideoObject(opts: {
   const s3 = getS3();
   const { bucket } = storjEnv();
   const contentType = opts.contentType || "video/mp4";
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: opts.key,
-      Body: opts.body as never,
-      ContentType: contentType,
-      ...(typeof opts.contentLength === "number" && Number.isFinite(opts.contentLength)
-        ? { ContentLength: Math.floor(opts.contentLength) }
-        : {}),
-      ...(opts.metadata ? { Metadata: opts.metadata } : {}),
-    })
-  );
+  const hasExactLength = typeof opts.contentLength === "number" && Number.isFinite(opts.contentLength);
+  const isStream =
+    opts.body instanceof Readable ||
+    (opts.body && typeof (opts.body as { pipe?: unknown }).pipe === "function") ||
+    !hasExactLength;
+
+  if (isStream) {
+    const upload = new Upload({
+      client: s3,
+      params: {
+        Bucket: bucket,
+        Key: opts.key,
+        Body: opts.body as never,
+        ContentType: contentType,
+        ...(hasExactLength ? { ContentLength: Math.floor(opts.contentLength!) } : {}),
+        ...(opts.metadata ? { Metadata: opts.metadata } : {}),
+      },
+    });
+    await upload.done();
+  } else {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: opts.key,
+        Body: opts.body as never,
+        ContentType: contentType,
+        ContentLength: Math.floor(opts.contentLength!),
+        ...(opts.metadata ? { Metadata: opts.metadata } : {}),
+      })
+    );
+  }
   const playbackUrl = await getActualVideoUrl(opts.key);
   return {
     bucket,
     key: opts.key,
     contentType,
-    sizeBytes: opts.contentLength ?? null as number | null,
+    sizeBytes: opts.contentLength ?? (null as number | null),
     objectUrl: getPublicObjectUrl(opts.key),
     playbackUrl,
   };
@@ -181,7 +203,13 @@ export async function uploadVideoFromUrl(
         `server-side — YouTube/Twitch watch pages need a download service.`
     );
   }
-  const res = await fetch(sourceUrl, { redirect: "follow" });
+  const res = await fetch(sourceUrl, {
+    redirect: "follow",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    },
+  });
   if (!res.ok) {
     throw new Error(`Failed to fetch source video (${res.status} ${res.statusText}) from ${sourceUrl}`);
   }

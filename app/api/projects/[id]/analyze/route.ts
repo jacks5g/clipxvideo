@@ -156,15 +156,20 @@ export async function POST(
       { status: 409 },
     );
   }
-  if (project.sourceUrl && project.status !== "ready") {
-    // Download landed a storageKey but bytes aren't verified yet (status is
-    // uploading/processing from the download step) — don't Deepgram a stub.
+  if (project.sourceUrl && (project.status === "uploading" || project.status === "requesting_upload")) {
+    // Download step hasn't finished yet.
     return NextResponse.json(
-      { error: `Video link download is ${project.status} — wait for it to finish, then retry analysis` },
+      { error: `Video link download is in progress (${project.status}) — wait for it to finish, then retry analysis` },
       { status: 409 },
     );
   }
-  if (!project.storageKey && !project.sourceUrl) {
+  if (project.status === "processing") {
+    return NextResponse.json(
+      { error: "Video analysis is already in progress — wait for it to finish" },
+      { status: 409 },
+    );
+  }
+  if (!project.storageKey) {
     return NextResponse.json(
       { error: "Upload the video before running AI analysis" },
       { status: 400 },

@@ -99,10 +99,13 @@ export const analyzeVideo = inngest.createFunction(
           `Video download not finished yet (status: ${project.status}) — wait for the link download to reach Storj, then retry analysis.`,
         );
       }
-      if (project.sourceUrl && project.status !== "ready") {
+      if (
+        project.sourceUrl &&
+        (project.status === "uploading" || project.status === "requesting_upload")
+      ) {
         // storageKey minted but download step hasn't verified bytes yet.
         throw new NonRetriableError(
-          `Video link download is ${project.status} — wait for it to finish, then retry analysis.`,
+          `Video link download is in progress (${project.status}) — wait for it to finish, then retry analysis.`,
         );
       }
       if (!project.storageKey)
